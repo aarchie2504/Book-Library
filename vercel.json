@@ -5,22 +5,18 @@
       "src": "Frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "Frontend/dist"
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://book-library-4a36.onrender.com"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/Frontend/assets/$1"
+      "dest": "https://book-library-4a36.onrender.com/api/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/Frontend/index.html"
+      "dest": "/$1"
     }
   ]
 }
