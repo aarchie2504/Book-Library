@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": ""
+      "dest": "https://book-library-4a36.onrender.com"
     },
     {
       "src": "/assets/(.*)",
@@ -23,8 +23,4 @@
       "dest": "/Frontend/index.html"
     }
   ]
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> affeda7ffed7a5e9abc5a420a393d3b7f5fc5510
