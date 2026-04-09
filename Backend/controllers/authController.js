@@ -47,6 +47,64 @@ const sendOtpEmail = async (toEmail, otp) => {
   });
 };
 
+
+const sendWelcomeEmail = async (toEmail, name, role) => {
+  if (!process.env.SMTP_USER) {
+    console.log(`\n📧 [DEV] Welcome email for ${role} ${name} <${toEmail}>\n`);
+    return;
+  }
+
+  const isWriter = role === 'writer';
+
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"Book Library" <${process.env.SMTP_USER}>`,
+    to: toEmail,
+    subject: `Welcome to Book Library, ${name}! 📚`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;border:1px solid #E2D5BA;border-radius:16px;background:#FFFEF8;">
+        <h2 style="color:#B8860B;font-family:serif;margin-bottom:4px;">📚 Book Library</h2>
+        <h3 style="color:#2A1F0E;margin-top:0;">Welcome, ${name}! 🎉</h3>
+
+        <p style="color:#5A4832;font-size:15px;">
+          Your account has been created successfully as a
+          <strong style="color:#B8860B;">${isWriter ? 'Writer' : 'Reader'}</strong>.
+        </p>
+
+        ${isWriter ? `
+        <div style="background:#FDF6E8;border-left:4px solid #B8860B;padding:16px;border-radius:8px;margin:20px 0;">
+          <p style="margin:0;color:#5A4832;font-size:14px;"><strong>As a Writer you can:</strong></p>
+          <ul style="color:#5A4832;font-size:14px;margin:8px 0 0 0;padding-left:18px;">
+            <li>Upload and manage your books</li>
+            <li>Track reader engagement & analytics</li>
+            <li>Read reviews from your audience</li>
+            <li>Build your follower base</li>
+          </ul>
+        </div>
+        ` : `
+        <div style="background:#FDF6E8;border-left:4px solid #B8860B;padding:16px;border-radius:8px;margin:20px 0;">
+          <p style="margin:0;color:#5A4832;font-size:14px;"><strong>As a Reader you can:</strong></p>
+          <ul style="color:#5A4832;font-size:14px;margin:8px 0 0 0;padding-left:18px;">
+            <li>Browse and read thousands of books</li>
+            <li>Bookmark your favourites</li>
+            <li>Follow your favourite writers</li>
+            <li>Rate and review books</li>
+          </ul>
+        </div>
+        `}
+
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}"
+           style="display:inline-block;margin-top:8px;padding:12px 28px;background:#B8860B;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:15px;">
+          Go to Book Library →
+        </a>
+
+        <hr style="border:none;border-top:1px solid #E2D5BA;margin:28px 0 16px;">
+        <p style="color:#999;font-size:12px;">Book Library · Do not reply to this email</p>
+      </div>
+    `,
+  });
+};
+
 // ── Generate JWT ──────────────────────────────────────────────────────────────
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
@@ -100,6 +158,7 @@ export const registerReader = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, role: 'reader' });
+    sendWelcomeEmail(email, name, 'reader').catch(err => console.error('Welcome email failed:', err.message)); // ← add this
     res.json({ result: 'Reader Registration Successful' });
   } catch (error) { next(error); }
 };
@@ -113,6 +172,7 @@ export const registerWriter = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, bio: description, role: 'writer' });
+    sendWelcomeEmail(email, name, 'writer').catch(err => console.error('Welcome email failed:', err.message)); // ← add this
     res.json({ result: 'Writer Registration Successful' });
   } catch (error) { next(error); }
 };
