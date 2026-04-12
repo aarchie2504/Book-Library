@@ -2,37 +2,57 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 
-// ── In-memory OTP store (replace with Redis / MongoDB TTL in production) ──────
+// ── In-memory OTP store ───────────────────────────────────────────────────────
 const otpStore = new Map();
 
-// ── Brevo Email Sender (uses HTTP API — works on Render free tier) ────────────
+// ── Brevo Email Sender (HTTP API) ─────────────────────────────────────────────
 const sendBrevoEmail = async ({ to, toName, subject, html }) => {
+  console.log(`\n📧 [BREVO] Attempting to send email...`);
+  console.log(`📧 [BREVO] To: ${to}`);
+  console.log(`📧 [BREVO] Subject: ${subject}`);
+  console.log(`📧 [BREVO] BREVO_API_KEY exists: ${!!process.env.BREVO_API_KEY}`);
+  console.log(`📧 [BREVO] BREVO_SENDER_EMAIL: ${process.env.BREVO_SENDER_EMAIL}`);
+
   if (!process.env.BREVO_API_KEY) {
-    console.log(`\n📧 [DEV] Email skipped (no BREVO_API_KEY) — To: ${to} | Subject: ${subject}\n`);
+    console.log(`📧 [BREVO] ❌ No API key found — email skipped\n`);
     return;
   }
 
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'accept':       'application/json',
-      'api-key':      process.env.BREVO_API_KEY,
-      'content-type': 'application/json',
+  const payload = {
+    sender: {
+      name:  'Book Library',
+      email: process.env.BREVO_SENDER_EMAIL,
     },
-    body: JSON.stringify({
-      sender: {
-        name:  'Book Library',
-        email: process.env.BREVO_SENDER_EMAIL || 'cherryvine.care@gmail.com',
-      },
-      to: [{ email: to, name: toName || to }],
-      subject,
-      htmlContent: html,
-    }),
-  });
+    to: [{ email: to, name: toName || to }],
+    subject,
+    htmlContent: html,
+  };
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Brevo API error ${response.status}: ${error}`);
+  console.log(`📧 [BREVO] Sending from: ${process.env.BREVO_SENDER_EMAIL}`);
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept':       'application/json',
+        'api-key':      process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await response.text();
+    console.log(`📧 [BREVO] Response status: ${response.status}`);
+    console.log(`📧 [BREVO] Response body: ${responseText}`);
+
+    if (!response.ok) {
+      throw new Error(`Brevo API error ${response.status}: ${responseText}`);
+    }
+
+    console.log(`📧 [BREVO] ✅ Email sent successfully to ${to}\n`);
+  } catch (err) {
+    console.error(`📧 [BREVO] ❌ Failed to send email: ${err.message}\n`);
+    throw err;
   }
 };
 
@@ -121,7 +141,7 @@ const sendWelcomeEmail = async (toEmail, name, role) => {
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
 
-// ── Session payload (compatible with frontend api.js) ─────────────────────────
+// ── Session payload ───────────────────────────────────────────────────────────
 const sessionPayload = (user, token) => ({
   result: 'Login Success',
   token,
@@ -170,7 +190,7 @@ export const registerReader = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, role: 'reader' });
-    sendWelcomeEmail(email, name, 'reader').catch(err => console.error('Welcome email failed:', err.message));
+    sendWelcomeEmail(email, name, 'reader').catch(err => console.error('❌ Welcome email failed:', err.message));
     res.json({ result: 'Reader Registration Successful' });
   } catch (error) { next(error); }
 };
@@ -184,7 +204,7 @@ export const registerWriter = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, bio: description, role: 'writer' });
-    sendWelcomeEmail(email, name, 'writer').catch(err => console.error('Welcome email failed:', err.message));
+    sendWelcomeEmail(email, name, 'writer').catch(err => console.error('❌ Welcome email failed:', err.message));
     res.json({ result: 'Writer Registration Successful' });
   } catch (error) { next(error); }
 };
@@ -197,7 +217,7 @@ export const register = async (req, res, next) => {
     if (existingUser)
       return res.status(400).json({ success: false, message: 'Email already registered.' });
     const user = await User.create({ name, email, password, role: role || 'reader' });
-    sendWelcomeEmail(email, name, user.role).catch(err => console.error('Welcome email failed:', err.message));
+    sendWelcomeEmail(email, name, user.role).catch(err => console.error('❌ Welcome email failed:', err.message));
     const token = generateToken(user._id);
     res.status(201).json({ success: true, message: 'Registration successful!', token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) { next(error); }
@@ -256,23 +276,21 @@ export const forgotPassword = async (req, res, next) => {
     if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    // Always respond the same way to prevent user enumeration
     if (!user) return res.json({ success: true, message: 'If that email is registered, a reset code was sent.' });
 
     const otp     = crypto.randomInt(100000, 999999).toString();
-    const expires = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const expires = Date.now() + 15 * 60 * 1000;
     otpStore.set(email.toLowerCase(), { otp, expires });
 
     try {
       await sendOtpEmail(email.toLowerCase(), otp);
     } catch (mailErr) {
-      console.error('Email send failed:', mailErr.message);
+      console.error('❌ OTP email failed:', mailErr.message);
     }
 
     res.json({
       success: true,
       message: 'If that email is registered, a reset code was sent.',
-      // Only expose OTP in development — remove this in production
       ...(process.env.NODE_ENV !== 'production' && { devOtp: otp }),
     });
   } catch (e) { next(e); }
