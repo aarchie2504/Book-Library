@@ -1,8 +1,40 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import emailjs from "@emailjs/browser";
+
+// ── Replace these 3 values with your EmailJS credentials ─────────────────────
+const EMAILJS_SERVICE_ID  = "service_6mbfo4n";   // e.g. "service_abc123"
+const EMAILJS_TEMPLATE_ID = "template_l0l9sej";  // e.g. "template_xyz789"
+const EMAILJS_PUBLIC_KEY  = "XcLrI5UFIQBTVRPGS2qYq";   // e.g. "aBcDeFgHiJkLmNoP"
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [sent, setSent] = useState(false);
+  const formRef = useRef(null);
+  const [form, setForm]       = useState({ name: "", email: "", message: "" });
+  const [sent, setSent]       = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await emailjs.sendForm(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        formRef.current,
+        EMAILJS_PUBLIC_KEY
+      );
+      setSent(true);
+      setForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const contacts = [
     {
@@ -54,7 +86,8 @@ export default function Contact() {
         .contact-input:focus { border-color: #B8860B !important; box-shadow: 0 0 0 3px rgba(184,134,11,0.12) !important; background: #FFFEF8 !important; }
         .contact-input::placeholder { color: #C0A870; }
         .contact-card:hover { transform: translateX(4px); border-left-color: currentColor; }
-        .send-btn:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(180,120,30,0.40) !important; }
+        .send-btn:hover:not(:disabled) { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(180,120,30,0.40) !important; }
+        .send-btn:disabled { opacity: 0.7; cursor: not-allowed; }
       `}</style>
 
       {/* BG orbs */}
@@ -140,7 +173,6 @@ export default function Contact() {
               ))}
             </div>
 
-            {/* Decorative ornament */}
             <div style={{ marginTop: "36px", textAlign: "left" }}>
               <div style={{
                 fontFamily: "'Cinzel', serif", fontSize: "10px",
@@ -179,7 +211,21 @@ export default function Contact() {
                 <p style={{
                   fontFamily: "'Lato', sans-serif",
                   fontSize: "15px", color: "#8A7055",
+                  marginBottom: "24px",
                 }}>We'll get back to you soon.</p>
+                <button
+                  onClick={() => setSent(false)}
+                  style={{
+                    padding: "10px 24px",
+                    background: "transparent",
+                    border: "1.5px solid #B8860B",
+                    borderRadius: "8px",
+                    color: "#B8860B",
+                    fontFamily: "'Cinzel', serif",
+                    fontSize: "11px", letterSpacing: "1.5px",
+                    cursor: "pointer",
+                  }}
+                >Send Another</button>
               </div>
             ) : (
               <>
@@ -195,10 +241,20 @@ export default function Contact() {
                   }}>We'd love to hear from you</h3>
                 </div>
 
-                {/* Divider */}
                 <div style={{ height: "1px", background: "linear-gradient(to right, transparent, #D4C090, transparent)", marginBottom: "28px" }} />
 
-                <form onSubmit={e => { e.preventDefault(); setSent(true); }}>
+                {/* Error message */}
+                {error && (
+                  <div style={{
+                    padding: "12px 16px", marginBottom: "20px",
+                    background: "#FFF0F0", border: "1px solid #F5C0C0",
+                    borderRadius: "8px", color: "#C0392B",
+                    fontFamily: "'Lato', sans-serif", fontSize: "14px",
+                  }}>{error}</div>
+                )}
+
+                {/* IMPORTANT: name attributes must match your EmailJS template variables */}
+                <form ref={formRef} onSubmit={handleSubmit}>
                   {/* Name */}
                   <div style={{ marginBottom: "20px" }}>
                     <label style={{
@@ -209,6 +265,7 @@ export default function Contact() {
                     }}>Your Name</label>
                     <input
                       className="contact-input"
+                      name="from_name"
                       placeholder="Jane Austen"
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -220,6 +277,7 @@ export default function Contact() {
                         color: "#2A1F0E", fontSize: "15px",
                         fontFamily: "'Lato', sans-serif",
                         outline: "none", transition: "all 0.2s",
+                        boxSizing: "border-box",
                       }}
                     />
                   </div>
@@ -235,6 +293,7 @@ export default function Contact() {
                     <input
                       type="email"
                       className="contact-input"
+                      name="from_email"
                       placeholder="you@example.com"
                       value={form.email}
                       onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
@@ -246,6 +305,7 @@ export default function Contact() {
                         color: "#2A1F0E", fontSize: "15px",
                         fontFamily: "'Lato', sans-serif",
                         outline: "none", transition: "all 0.2s",
+                        boxSizing: "border-box",
                       }}
                     />
                   </div>
@@ -260,6 +320,7 @@ export default function Contact() {
                     }}>Your Message</label>
                     <textarea
                       className="contact-input"
+                      name="message"
                       placeholder="Tell us what's on your mind…"
                       value={form.message}
                       onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -273,26 +334,31 @@ export default function Contact() {
                         fontFamily: "'Lato', sans-serif",
                         outline: "none", transition: "all 0.2s",
                         resize: "vertical", lineHeight: 1.7,
+                        boxSizing: "border-box",
                       }}
                     />
                   </div>
 
-                  <button type="submit" className="send-btn" style={{
+                  <button type="submit" className="send-btn" disabled={loading} style={{
                     width: "100%", padding: "15px",
-                    background: "linear-gradient(135deg, #C89030, #A06820)",
+                    background: loading
+                      ? "linear-gradient(135deg, #C89030aa, #A06820aa)"
+                      : "linear-gradient(135deg, #C89030, #A06820)",
                     border: "none", borderRadius: "12px",
-                    color: "white", cursor: "pointer",
+                    color: "white", cursor: loading ? "not-allowed" : "pointer",
                     fontFamily: "'Cinzel', serif", fontSize: "12px",
                     letterSpacing: "1.5px", fontWeight: "600",
                     boxShadow: "0 4px 16px rgba(180,120,30,0.28)",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
                     transition: "all 0.25s",
                   }}>
-                    Send Message
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="22" y1="2" x2="11" y2="13"/>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
+                    {loading ? "Sending…" : "Send Message"}
+                    {!loading && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    )}
                   </button>
                 </form>
               </>
