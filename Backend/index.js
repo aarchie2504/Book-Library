@@ -27,6 +27,9 @@ connectDB();
 
 const app = express();
 
+// ── Trust proxy (required for Render/Heroku deployments) ─────────────────────
+app.set('trust proxy', 1);
+
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
