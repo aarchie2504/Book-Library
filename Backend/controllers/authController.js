@@ -1,37 +1,50 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import User from '../models/User.js';
 
 // ── In-memory OTP store (replace with Redis / MongoDB TTL in production) ──────
 const otpStore = new Map();
 
-// ── Nodemailer transporter (configure via .env) ───────────────────────────────
-const createTransporter = () => {
-  // Uses environment variables — set these in .env for production
-  // SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
-  // For Gmail: use App Password (not account password)
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-    port:   Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || '',
+// ── Brevo Email Sender (uses HTTP API — works on Render free tier) ────────────
+const sendBrevoEmail = async ({ to, toName, subject, html }) => {
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`\n📧 [DEV] Email skipped (no BREVO_API_KEY) — To: ${to} | Subject: ${subject}\n`);
+    return;
+  }
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept':       'application/json',
+      'api-key':      process.env.BREVO_API_KEY,
+      'content-type': 'application/json',
     },
+    body: JSON.stringify({
+      sender: {
+        name:  'Book Library',
+        email: process.env.BREVO_SENDER_EMAIL || 'cherryvine.care@gmail.com',
+      },
+      to: [{ email: to, name: toName || to }],
+      subject,
+      htmlContent: html,
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Brevo API error ${response.status}: ${error}`);
+  }
 };
 
+// ── Send OTP / Password Reset Email ──────────────────────────────────────────
 const sendOtpEmail = async (toEmail, otp) => {
-  // In development without SMTP configured, just log to console
-  if (!process.env.SMTP_USER) {
+  if (!process.env.BREVO_API_KEY) {
     console.log(`\n📧 [DEV] PASSWORD RESET OTP for ${toEmail}: ${otp}  (valid 15 min)\n`);
     return;
   }
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"Book Library" <${process.env.SMTP_USER}>`,
-    to:   toEmail,
+
+  await sendBrevoEmail({
+    to:      toEmail,
     subject: 'Your Password Reset Code — Book Library',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;border:1px solid #E2D5BA;border-radius:16px;background:#FFFEF8;">
@@ -47,19 +60,18 @@ const sendOtpEmail = async (toEmail, otp) => {
   });
 };
 
-
+// ── Send Welcome Email ────────────────────────────────────────────────────────
 const sendWelcomeEmail = async (toEmail, name, role) => {
-  if (!process.env.SMTP_USER) {
+  if (!process.env.BREVO_API_KEY) {
     console.log(`\n📧 [DEV] Welcome email for ${role} ${name} <${toEmail}>\n`);
     return;
   }
 
   const isWriter = role === 'writer';
 
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"Book Library" <${process.env.SMTP_USER}>`,
-    to: toEmail,
+  await sendBrevoEmail({
+    to:      toEmail,
+    toName:  name,
     subject: `Welcome to Book Library, ${name}! 📚`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;border:1px solid #E2D5BA;border-radius:16px;background:#FFFEF8;">
@@ -76,7 +88,7 @@ const sendWelcomeEmail = async (toEmail, name, role) => {
           <p style="margin:0;color:#5A4832;font-size:14px;"><strong>As a Writer you can:</strong></p>
           <ul style="color:#5A4832;font-size:14px;margin:8px 0 0 0;padding-left:18px;">
             <li>Upload and manage your books</li>
-            <li>Track reader engagement & analytics</li>
+            <li>Track reader engagement &amp; analytics</li>
             <li>Read reviews from your audience</li>
             <li>Build your follower base</li>
           </ul>
@@ -158,7 +170,7 @@ export const registerReader = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, role: 'reader' });
-    sendWelcomeEmail(email, name, 'reader').catch(err => console.error('Welcome email failed:', err.message)); // ← add this
+    sendWelcomeEmail(email, name, 'reader').catch(err => console.error('Welcome email failed:', err.message));
     res.json({ result: 'Reader Registration Successful' });
   } catch (error) { next(error); }
 };
@@ -172,7 +184,7 @@ export const registerWriter = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.json({ result: 'Email Id Already Exists' });
     await User.create({ name, address, city, phone: mno, email, password: pwd, bio: description, role: 'writer' });
-    sendWelcomeEmail(email, name, 'writer').catch(err => console.error('Welcome email failed:', err.message)); // ← add this
+    sendWelcomeEmail(email, name, 'writer').catch(err => console.error('Welcome email failed:', err.message));
     res.json({ result: 'Writer Registration Successful' });
   } catch (error) { next(error); }
 };
@@ -185,6 +197,7 @@ export const register = async (req, res, next) => {
     if (existingUser)
       return res.status(400).json({ success: false, message: 'Email already registered.' });
     const user = await User.create({ name, email, password, role: role || 'reader' });
+    sendWelcomeEmail(email, name, user.role).catch(err => console.error('Welcome email failed:', err.message));
     const token = generateToken(user._id);
     res.status(201).json({ success: true, message: 'Registration successful!', token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) { next(error); }
@@ -254,7 +267,6 @@ export const forgotPassword = async (req, res, next) => {
       await sendOtpEmail(email.toLowerCase(), otp);
     } catch (mailErr) {
       console.error('Email send failed:', mailErr.message);
-      // In dev: still expose OTP via response so dev can test
     }
 
     res.json({
