@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Alert } from "./ToastProvider.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import { api, saveSession } from "./api";
 
@@ -77,7 +78,7 @@ export default function Login(){
             <div style={{fontFamily:"'Cinzel',serif",fontSize:12,letterSpacing:'1.5px',color:"#B8860B",marginBottom:"10px",textTransform:"uppercase"}}>Sign In</div>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:"900",background:"linear-gradient(135deg,#3D2B0E 0%,#8B5E0A 30%,#C49020 55%,#7A4A08 80%,#3D2B0E 100%)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"shimmerGold 6s linear infinite",margin:0}}>Access Your Library</h1>
           </div>
-          {error&&<div style={{background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.3)",borderRadius:"10px",padding:"12px 16px",marginBottom:"20px",fontFamily:"'Lato',sans-serif",fontSize:"14px",color:"#dc2626"}}>{error}</div>}
+          {error&&<Alert type="error" message={error} onClose={()=>setError("")} />}
           <form onSubmit={handleSubmit}>
             <div style={{marginBottom:"20px"}}>
               <label style={{display:"block",marginBottom:"7px",fontFamily:"'Cinzel',serif",fontSize:12,letterSpacing:"1.5px",textTransform:"uppercase",color:"#3D2B0E"}}>Email Address</label>

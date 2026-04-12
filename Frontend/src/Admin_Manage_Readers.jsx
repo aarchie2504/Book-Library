@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useToast, useConfirm } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -13,39 +14,38 @@ const ff = { fontFamily:"'Lato',sans-serif" };
 const serif = { fontFamily:"'Cinzel',serif" };
 
 export default function Admin_Manage_Readers() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [readers, setReaders]   = useState([]);
   const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(1);
   const [total, setTotal]       = useState(0);
   const [pages, setPages]       = useState(1);
   const [loading, setLoading]   = useState(true);
-  const [toast, setToast]       = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   const load = useCallback((p = 1, q = search) => {
     setLoading(true);
     const params = `?page=${p}&limit=10${q ? `&search=${encodeURIComponent(q)}` : ''}`;
     api.adminGetReaders(params)
       .then(d => { setReaders(d.readers||[]); setTotal(d.total||0); setPages(d.pages||1); setPage(p); })
-      .catch(() => showToast('Failed to load readers.'))
+      .catch(() => toast.error('Failed to load readers.'))
       .finally(() => setLoading(false));
   }, [search]);
 
   useEffect(() => { load(1, search); }, []);
 
-  const handleSearch = (e) => { e.preventDefault(); load(1, search); };
+  const handleSearch = async (e) => { e.preventDefault(); load(1, search); };
 
   const handleBlock = async (id, isBlocked) => {
     await api.adminBlockUser(id);
-    showToast(isBlocked ? 'User unblocked.' : 'User blocked.');
+    toast.info(isBlocked ? 'User unblocked.' : 'User blocked.');
     load(page);
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete reader "${name}"? This cannot be undone.`)) return;
+    if (!await confirm({ title: "Confirm Action", message: `Delete reader "${name}"? This cannot be undone.`, confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return;
     await api.adminDeleteUser(id);
-    showToast('Reader deleted.');
+    toast.success('Reader deleted.');
     load(page);
   };
 
@@ -58,11 +58,7 @@ export default function Admin_Manage_Readers() {
       <style>{GL}</style>
 
       {/* Toast */}
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999, animation:'fadeUp 0.3s ease' }}>
-          {toast}
-        </div>
-      )}
+      
 
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
         {/* Header */}

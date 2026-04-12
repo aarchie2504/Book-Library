@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -12,13 +13,11 @@ const ff = { fontFamily:"'Lato',sans-serif" };
 const serif = { fontFamily:"'Cinzel',serif" };
 
 export default function Admin_Announcement() {
+  const toast = useToast();
   const [text, setText]       = useState('');
   const [saved, setSaved]     = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
-  const [toast, setToast]     = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   useEffect(() => {
     api.adminGetAnnouncement()
@@ -32,8 +31,8 @@ export default function Admin_Announcement() {
     try {
       await api.adminSetAnnouncement(text);
       setSaved(text);
-      showToast(text.trim() ? 'Announcement published!' : 'Announcement cleared.');
-    } catch { showToast('Failed to save.'); }
+      toast.info(text.trim() ? 'Announcement published!' : 'Announcement cleared.');
+    } catch { toast.error('Failed to save.'); }
     setSaving(false);
   };
 
@@ -43,17 +42,15 @@ export default function Admin_Announcement() {
     try {
       await api.adminSetAnnouncement('');
       setSaved('');
-      showToast('Announcement cleared.');
-    } catch { showToast('Failed to clear.'); }
+      toast.info('Announcement cleared.');
+    } catch { toast.error('Failed to clear.'); }
     setSaving(false);
   };
 
   return (
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999, animation:'fadeUp 0.3s ease' }}>{toast}</div>
-      )}
+      
       <div style={{ maxWidth:760, margin:'0 auto' }}>
         <div style={{ marginBottom:36 }}>
           <div style={{ fontSize:12, letterSpacing:'2px', fontFamily:"'Cinzel',serif", color:'#B8860B', textTransform:'uppercase', marginBottom:8, fontWeight:600 }}>Admin Panel</div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast, useConfirm } from './ToastProvider.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from './api';
 
@@ -26,14 +27,13 @@ const Stars = ({ n }) => (
 );
 
 export default function Admin_Moderate_Ratings() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const { bid }       = useParams();
   const navigate      = useNavigate();
   const [ratings, setRatings] = useState([]);
   const [bookName, setBookName] = useState('');
   const [loading, setLoading]   = useState(true);
-  const [toast, setToast]       = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   const load = () => {
     setLoading(true);
@@ -43,16 +43,16 @@ export default function Admin_Moderate_Ratings() {
     ]).then(([rats, book]) => {
       setRatings(rats || []);
       setBookName(book?.book_name || book?.title || 'Book');
-    }).catch(() => showToast('Failed to load ratings.'))
+    }).catch(() => toast.error('Failed to load ratings.'))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [bid]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this rating permanently?')) return;
+    if (!await confirm({ title: "Confirm Action", message: 'Delete this rating permanently?', confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return;
     await api.adminDeleteRating(id);
-    showToast('Rating deleted.');
+    toast.success('Rating deleted.');
     load();
   };
 
@@ -64,11 +64,7 @@ export default function Admin_Moderate_Ratings() {
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
 
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999 }}>
-          {toast}
-        </div>
-      )}
+      
 
       <div style={{ maxWidth:900, margin:'0 auto' }}>
         <button onClick={() => navigate(-1)}

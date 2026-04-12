@@ -1,5 +1,6 @@
 import { api, imgUrl, pdfUrl } from "./api";
 import { useState, useEffect } from "react";
+import { useToast, useConfirm } from './ToastProvider.jsx';
 import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
 
@@ -70,7 +71,7 @@ function PageHeader({tag,title,action,backTo,backLabel}){
 export function Admin_View_Category() {
   const [cat,setCat]=useState([]); const [loading,setLoading]=useState(true);
   useEffect(()=>{api.getCategories().then(setCat).finally(()=>setLoading(false));},[]);
-  const del=async id=>{if(!window.confirm("Delete this category?")) return; await api.deleteCategory(id); setCat(c=>c.filter(x=>x.cat_id!==id));};
+  const del=async id=>{if(!await confirm({ title: "Confirm Action", message: "Delete this category?", confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return; await api.deleteCategory(id); setCat(c=>c.filter(x=>x.cat_id!==id));};
   return (
     <div style={pageWrap}><style>{GL}</style><div style={orb1}/><div style={orb2}/>
       <div style={inner()}>
@@ -95,7 +96,7 @@ export function Admin_View_Category() {
 export function Admin_View_Books() {
   const [cat,setCat]=useState([]); const [books,setBooks]=useState([]); const [loading,setLoading]=useState(true);
   useEffect(()=>{Promise.all([api.getCategories(),api.getBooks()]).then(([cats,bks])=>{setCat(cats);setBooks(bks);}).finally(()=>setLoading(false));},[]);
-  const del=async id=>{if(!window.confirm("Delete this book?")) return; await api.deleteBook(id); setBooks(b=>b.filter(bk=>bk.book_id!==id));};
+  const del=async id=>{if(!await confirm({ title: "Confirm Action", message: "Delete this book?", confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return; await api.deleteBook(id); setBooks(b=>b.filter(bk=>bk.book_id!==id));};
   const catName=id=>cat.find(c=>c.cat_id===id)?.category||"—";
   return (
     <div style={pageWrap}><style>{GL}</style><div style={orb1}/><div style={orb2}/>
@@ -285,15 +286,14 @@ export function Admin_View_ReaderWise_Rating_Report() {
 // ═══════════════════════════════════════════════════════════════════════════
 export function Writer_View_Uploaded_Books() {
   const writerid=localStorage.getItem("writerid")||localStorage.getItem("userid");
-  const [cat,setCat]=useState([]); const [books,setBooks]=useState([]); const [loading,setLoading]=useState(true); const [toast,setToast]=useState("");
-  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(""),2600);};
+  const [cat,setCat]=useState([]); const [books,setBooks]=useState([]); const [loading,setLoading]=useState(true);
   useEffect(()=>{Promise.all([api.getCategories(),api.writerGetUploaded(writerid)]).then(([cats,bks])=>{setCat(cats);setBooks(bks);}).finally(()=>setLoading(false));},[writerid]);
-  const del=async id=>{if(!window.confirm("Delete this book permanently?")) return; try{await api.writerDeleteBook(id); setBooks(b=>b.filter(bk=>(bk.book_id||bk._id)!==id)); showToast("Book deleted.");}catch{showToast("Delete failed.");}};
-  const toggleDraft=async(id,isDraft)=>{try{await api.writerTogglePublish(id); setBooks(b=>b.map(bk=>(bk.book_id||bk._id)===id?{...bk,isDraft:!isDraft}:bk)); showToast(isDraft?"Book published!":"Book moved to drafts.");}catch{showToast("Failed.");}};
+  const del=async id=>{if(!await confirm({ title: "Confirm Action", message: "Delete this book permanently?", confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return; try{await api.writerDeleteBook(id); setBooks(b=>b.filter(bk=>(bk.book_id||bk._id)!==id)); toast.success("Book deleted.");}catch{toast.error("Delete failed.");}};
+  const toggleDraft=async(id,isDraft)=>{try{await api.writerTogglePublish(id); setBooks(b=>b.map(bk=>(bk.book_id||bk._id)===id?{...bk,isDraft:!isDraft}:bk)); toast.success(isDraft?"Book published!":"Book moved to drafts.");}catch{toast.error("Failed.");}};
   const catName=id=>cat.find(c=>c.cat_id===id)?.category||"—";
   return (
     <div style={pageWrap}><style>{GL}</style><div style={orb1}/><div style={orb2}/>
-      {toast&&<div style={{position:"fixed",top:24,right:24,background:"#2A1F0E",color:"#F5E8C8",padding:"12px 22px",borderRadius:12,fontSize:13,fontFamily:"'Lato',sans-serif",zIndex:999}}>{toast}</div>}
+      
       <div style={inner()}>
         <PageHeader tag="My Library" title="My Uploaded Books" action={
           <div style={{display:"flex",gap:"10px"}}>
@@ -400,8 +400,7 @@ function BookGrid({ books, catName, showRead=true, showRate=false, showRatings=f
 export function Reader_View_All_Books() {
   const [books,setBooks]=useState([]); const [cat,setCat]=useState([]); const [activeCat,setActiveCat]=useState(0);
   const [loading,setLoading]=useState(true); const [search,setSearch]=useState(""); const [sort,setSort]=useState("newest");
-  const [recent,setRecent]=useState([]); const [bookmarks,setBookmarks]=useState(new Set()); const [toast,setToast]=useState("");
-  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(""),2200);};
+  const [recent,setRecent]=useState([]); const [bookmarks,setBookmarks]=useState(new Set());
   useEffect(()=>{
     Promise.all([api.getCategories(),api.readerGetBooks(),api.readerGetRecent().catch(()=>[]),api.readerGetBookmarks().catch(()=>[])])
       .then(([cats,bks,rec,bms])=>{setCat(cats);setBooks(bks);setRecent(rec||[]);setBookmarks(new Set((bms||[]).map(b=>String(b._id||b.book_id))));})
@@ -410,13 +409,13 @@ export function Reader_View_All_Books() {
   const filterBooks=async id=>{setActiveCat(id);setLoading(true);setSearch("");try{const bks=id===0?await api.readerGetBooks():await api.readerGetCatBooks(id);setBooks(bks);}catch{}setLoading(false);};
   const handleSearch=async e=>{e.preventDefault();if(!search.trim()){filterBooks(0);return;}setLoading(true);setActiveCat(-1);try{const bks=await api.readerSearch(search,"",sort);setBooks(bks);}catch{}setLoading(false);};
   const handleSort=async val=>{setSort(val);setLoading(true);try{const bks=search.trim()?await api.readerSearch(search,"",val):await api.readerGetBooks();setBooks(bks);}catch{}setLoading(false);};
-  const toggleBookmark=async bid=>{try{const res=await api.readerToggleBookmark(bid);setBookmarks(prev=>{const n=new Set(prev);res.bookmarked?n.add(String(bid)):n.delete(String(bid));return n;});showToast(res.message||"Done");}catch{showToast("Please log in to bookmark.");}};
+  const toggleBookmark=async bid=>{try{const res=await api.readerToggleBookmark(bid);setBookmarks(prev=>{const n=new Set(prev);res.bookmarked?n.add(String(bid)):n.delete(String(bid));return n;});toast.success(res.message||"Done");}catch{toast.error("Please log in to bookmark.");}};
   const trackAndOpen=(bid,url)=>{api.readerTrackRecent(bid).catch(()=>{});window.open(url,"_blank");};
   const catName=id=>cat.find(c=>c.cat_id===id)?.category||String(id)||"—";
   const filterBtnS=(active)=>({display:"inline-flex",alignItems:"center",padding:"8px 18px",background:active?"linear-gradient(135deg,#C89030,#A06820)":"rgba(255,250,238,.85)",border:active?"none":"1.5px solid #D8C898",borderRadius:"20px",color:active?"white":"#8A6040",fontFamily:"'Cinzel',serif",fontSize:13,letterSpacing:'1px',cursor:"pointer",fontWeight:active?600:400,boxShadow:active?"0 3px 10px rgba(180,120,30,.22)":"none",transition:"all 0.2s"});
   return (
     <div style={pageWrap}><style>{GL}</style><div style={orb1}/><div style={orb2}/>
-      {toast&&<div style={{position:"fixed",top:24,right:24,background:"#2A1F0E",color:"#F5E8C8",padding:"12px 22px",borderRadius:12,fontSize:13,fontFamily:"'Lato',sans-serif",zIndex:999}}>{toast}</div>}
+      
       <div style={inner()}>
         <PageHeader tag="Library" title="Browse Books"/>
         <form onSubmit={handleSearch} style={{display:"flex",gap:"10px",marginBottom:"20px",flexWrap:"wrap"}}>

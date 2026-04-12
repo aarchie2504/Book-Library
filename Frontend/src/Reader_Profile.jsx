@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { Link } from 'react-router-dom';
 import { api, imgUrl } from './api';
 
@@ -23,6 +24,7 @@ const Stars = ({ n }) => (
 );
 
 export default function Reader_Profile() {
+  const toast = useToast();
   const rid = localStorage.getItem('readerid') || localStorage.getItem('userid');
   const [profile,  setProfile]  = useState(null);
   const [stats,    setStats]    = useState({});
@@ -30,10 +32,8 @@ export default function Reader_Profile() {
   const [editing,  setEditing]  = useState(false);
   const [form,     setForm]     = useState({});
   const [saving,   setSaving]   = useState(false);
-  const [toast,    setToast]    = useState('');
   const [loading,  setLoading]  = useState(true);
 
-  const showToast = msg => { setToast(msg); setTimeout(() => setToast(''), 2600); };
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Reader_Profile() {
       setStats(prof.stats || {});
       setRatings(rats || []);
       setForm({ name: prof.reader.name||'', city: prof.reader.city||'', phone: prof.reader.phone||'', address: prof.reader.address||'' });
-    }).catch(() => showToast('Could not load profile.'))
+    }).catch(() => toast.error('Could not load profile.'))
       .finally(() => setLoading(false));
   }, [rid]);
 
@@ -57,8 +57,8 @@ export default function Reader_Profile() {
       setForm({ name: res.reader.name||'', city: res.reader.city||'', phone: res.reader.phone||'', address: res.reader.address||'' });
       setEditing(false);
       localStorage.setItem('uname', res.reader.name || '');
-      showToast('Profile updated!');
-    } catch { showToast('Failed to save.'); }
+      toast.success('Profile updated!');
+    } catch { toast.error('Failed to save.'); }
     setSaving(false);
   };
 
@@ -72,7 +72,7 @@ export default function Reader_Profile() {
   return (
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
-      {toast && <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...FF, zIndex:999, animation:'fadeUp 0.3s ease' }}>{toast}</div>}
+      
 
       <div style={{ maxWidth:860, margin:'0 auto' }}>
         <div style={{ marginBottom:32, animation:'fadeUp 0.5s ease both' }}>

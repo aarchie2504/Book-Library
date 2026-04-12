@@ -1,4 +1,6 @@
 import { api, imgUrl, pdfUrl } from "./api";
+import { useToast } from './ToastProvider.jsx';
+import { Alert } from './ToastProvider.jsx';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -17,6 +19,7 @@ const GL = `
 `;
 
 export default function Reader_View_Book_Detail() {
+  const toast = useToast();
   const readerid = localStorage.getItem("readerid");
   const params   = useParams();
   const navigate = useNavigate();
@@ -122,14 +125,9 @@ export default function Reader_View_Book_Detail() {
               <h3 style={{ fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:"800",color:"#2A1F0E",marginBottom:"6px" }}>Share Your Opinion</h3>
               <p style={{ fontFamily:"'Lato',sans-serif",fontSize:"14px",color:"#3D2B0E",marginBottom:"28px" }}>Your rating and review help other readers discover great books.</p>
 
-              {msg==="success" && (
-                <div style={{ background:"rgba(45,106,48,.08)",border:"1px solid rgba(45,106,48,.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"10px",fontFamily:"'Lato',sans-serif",fontSize:"14px",color:"#2D6A30",animation:"checkIn 0.4s ease both" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  Rating submitted! Redirecting…
-                </div>
-              )}
-              {msg==="error" && <div style={{ background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",fontFamily:"'Lato',sans-serif",fontSize:"14px",color:"#dc2626" }}>Error submitting. Please try again.</div>}
-              {msg==="empty" && <div style={{ background:"rgba(239,68,68,.07)",border:"1px solid rgba(239,68,68,.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",fontFamily:"'Lato',sans-serif",fontSize:"14px",color:"#dc2626" }}>Please select a star rating first.</div>}
+              {msg==="success" && <Alert type="success" message="Rating submitted! Redirecting…" />}
+              {msg==="error" && <Alert type="error" message="Error submitting. Please try again." onClose={() => setMsg("")} />}
+              {msg==="empty" && <Alert type="warning" message="Please select a star rating first." onClose={() => setMsg("")} />}
 
               <form onSubmit={submitRating}>
                 {/* Stars */}

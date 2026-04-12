@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import emailjs from "@emailjs/browser";
+import { Alert } from './ToastProvider.jsx';
 
 // ── Replace these 3 values with your EmailJS credentials ─────────────────────
 const EMAILJS_SERVICE_ID  = "service_6mbfo4n";     // EmailJS → Email Services
@@ -288,21 +289,7 @@ export default function Contact() {
                 <div style={{ height: "1px", background: "linear-gradient(to right, transparent, #D4C090, transparent)", marginBottom: "28px" }} />
 
                 {/* Error message */}
-                {error && (
-                  <div style={{
-                    padding: "14px 16px", marginBottom: "20px",
-                    background: "#FFF0F0",
-                    border: "1px solid #F5C0C0",
-                    borderRadius: "10px",
-                    color: "#C0392B",
-                    fontFamily: "'Lato', sans-serif",
-                    fontSize: "13px",
-                    lineHeight: 1.6,
-                  }}>
-                    <strong style={{ display: "block", marginBottom: "4px" }}>Failed to send</strong>
-                    {error}
-                  </div>
-                )}
+                {error && <Alert type="error" message={error} onClose={() => setError("")} />}
 
                 {/*
                   IMPORTANT — EmailJS template variables must match these name attributes:

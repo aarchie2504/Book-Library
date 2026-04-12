@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { Link } from 'react-router-dom';
 import { api, imgUrl, pdfUrl } from './api';
 
@@ -13,29 +14,27 @@ const FF  = { fontFamily:"'Lato',sans-serif" };
 const SER = { fontFamily:"'Cinzel',serif" };
 
 export default function Reader_Bookmarks() {
+  const toast = useToast();
   const [books,   setBooks]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast,   setToast]   = useState('');
-
-  const showToast = msg => { setToast(msg); setTimeout(() => setToast(''), 2400); };
 
   useEffect(() => {
     api.readerGetBookmarks()
       .then(d => setBooks(d || []))
-      .catch(() => showToast('Could not load bookmarks.'))
+      .catch(() => toast.error('Could not load bookmarks.'))
       .finally(() => setLoading(false));
   }, []);
 
   const handleRemove = async (bid) => {
     await api.readerToggleBookmark(bid);
     setBooks(b => b.filter(bk => String(bk._id || bk.book_id) !== String(bid)));
-    showToast('Removed from bookmarks.');
+    toast.success('Removed from bookmarks.');
   };
 
   return (
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
-      {toast && <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...FF, zIndex:999 }}>{toast}</div>}
+      
 
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
         <div style={{ marginBottom:32, animation:'fadeUp 0.5s ease both' }}>

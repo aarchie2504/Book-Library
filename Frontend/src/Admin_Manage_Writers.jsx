@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useToast, useConfirm } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -13,39 +14,38 @@ const ff = { fontFamily:"'Lato',sans-serif" };
 const serif = { fontFamily:"'Cinzel',serif" };
 
 export default function Admin_Manage_Writers() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [writers, setWriters] = useState([]);
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState(1);
   const [total, setTotal]     = useState(0);
   const [pages, setPages]     = useState(1);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast]     = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   const load = useCallback((p = 1, q = search) => {
     setLoading(true);
     const params = `?page=${p}&limit=10${q ? `&search=${encodeURIComponent(q)}` : ''}`;
     api.adminGetWriters(params)
       .then(d => { setWriters(d.writers||[]); setTotal(d.total||0); setPages(d.pages||1); setPage(p); })
-      .catch(() => showToast('Failed to load writers.'))
+      .catch(() => toast.error('Failed to load writers.'))
       .finally(() => setLoading(false));
   }, [search]);
 
   useEffect(() => { load(1, ''); }, []);
 
-  const handleSearch = (e) => { e.preventDefault(); load(1, search); };
+  const handleSearch = async (e) => { e.preventDefault(); load(1, search); };
 
   const handleBlock = async (id, isBlocked) => {
     await api.adminBlockUser(id);
-    showToast(isBlocked ? 'Writer unblocked.' : 'Writer blocked.');
+    toast.info(isBlocked ? 'Writer unblocked.' : 'Writer blocked.');
     load(page);
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete writer "${name}"? All their books will remain but be unlinked.`)) return;
+    if (!await confirm({ title: "Confirm Action", message: `Delete writer "${name}"? All their books will remain but be unlinked.`, confirmLabel: "Yes, proceed", cancelLabel: "Cancel", variant: "danger" })) return;
     await api.adminDeleteUser(id);
-    showToast('Writer deleted.');
+    toast.success('Writer deleted.');
     load(page);
   };
 
@@ -53,11 +53,7 @@ export default function Admin_Manage_Writers() {
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
 
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999 }}>
-          {toast}
-        </div>
-      )}
+      
 
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
         <div style={{ marginBottom:32 }}>

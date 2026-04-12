@@ -1,3 +1,4 @@
+import { Alert } from './ToastProvider.jsx';
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -182,13 +183,15 @@ export default function Forgot_Password() {
         <div style={{ background:'linear-gradient(160deg,#FFFEF8,#FBF4E4)', border:'1px solid #E2D5BA', borderRadius:18, padding:32, boxShadow:'0 6px 24px rgba(80,50,15,.08)', animation:'fadeUp 0.5s 0.05s ease both' }}>
 
           {success ? (
-            <div style={{ textAlign:'center', padding:'12px 0' }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" strokeWidth="1.5" style={{ marginBottom:14 }}>
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <div style={{ fontSize:18, fontWeight:700, fontFamily:"'Playfair Display',serif", color:'#27500A', marginBottom:8 }}>Password reset!</div>
-              <p style={{ fontSize:13, ...FF, color:'#5A7A50', marginBottom:20 }}>Your password has been updated. You can now log in with your new password.</p>
-              <Link to="/login" style={{ display:'inline-block', padding:'11px 28px', background:'linear-gradient(135deg,#C89030,#A06820)', borderRadius:10, color:'white', ...SER, fontSize:13, letterSpacing:'1px', textDecoration:'none' }}>
+            <div style={{ textAlign:'center', padding:'16px 0' }}>
+              <div style={{ width:72, height:72, background:'linear-gradient(135deg,#C8EAAA,#A0D870)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', boxShadow:'0 6px 20px rgba(60,160,20,.25)' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#235A08" strokeWidth="2.2">
+                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div style={{ fontSize:20, fontWeight:700, fontFamily:"'Playfair Display',serif", color:'#235A08', marginBottom:10 }}>Password Reset!</div>
+              <p style={{ fontSize:13, ...FF, color:'#3B7A10', marginBottom:24, lineHeight:1.6 }}>Your password has been updated successfully. You can now log in with your new password.</p>
+              <Link to="/login" style={{ display:'inline-block', padding:'12px 32px', background:'linear-gradient(135deg,#C89030,#A06820)', borderRadius:10, color:'white', ...SER, fontSize:13, letterSpacing:'1px', textDecoration:'none', boxShadow:'0 4px 14px rgba(180,120,30,.3)' }}>
                 Go to Login
               </Link>
             </div>
@@ -198,7 +201,7 @@ export default function Forgot_Password() {
               <p style={{ fontSize:13, ...FF, color:'#2A1F0E', marginBottom:22, lineHeight:1.6 }}>
                 Enter your registered email address. We'll send you a 6-digit OTP to reset your password.
               </p>
-              {error && <div style={{ background:'#FCEBEB', border:'1px solid #F09595', borderRadius:10, padding:'10px 14px', marginBottom:16, fontSize:13, ...FF, color:'#A32D2D' }}>{error}</div>}
+              {error && <Alert type="error" message={error} onClose={() => setError("")} />}
               <form onSubmit={handleRequest}>
                 <div style={{ marginBottom:22 }}>
                   <label style={{ display:'block', marginBottom:6, fontSize:12, letterSpacing:'1.5px', textTransform:'uppercase', color:'#3D2B0E', ...SER }}>Email Address</label>
@@ -217,10 +220,8 @@ export default function Forgot_Password() {
           ) : (
             <>
               {/* OTP Step */}
-              <div style={{ background:'#EAF3DE', border:'1px solid #97C459', borderRadius:10, padding:'10px 14px', marginBottom:20, fontSize:13, ...FF, color:'#27500A' }}>
-                A 6-digit OTP was sent to <strong>{email}</strong>. Check your inbox (and spam folder).
-              </div>
-              {error && <div style={{ background:'#FCEBEB', border:'1px solid #F09595', borderRadius:10, padding:'10px 14px', marginBottom:16, fontSize:13, ...FF, color:'#A32D2D' }}>{error}</div>}
+              <Alert type="info" message={<>A 6-digit OTP was sent to <strong>{email}</strong>. Check your inbox (and spam folder).</>} />
+              {error && <Alert type="error" message={error} onClose={() => setError("")} />}
 
               <form onSubmit={handleReset}>
                 {/* OTP Boxes */}

@@ -1,3 +1,4 @@
+import { Alert, FieldError } from './ToastProvider.jsx';
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRole } from './api';
@@ -33,7 +34,7 @@ function PwdField({ label, value, onChange, show, onToggle, error }) {
           </svg>
         </button>
       </div>
-      {error && <span style={{ fontSize:12, color:'#A32D2D', marginTop:4, display:'block', ...FF }}>{error}</span>}
+      {error && <FieldError message={error} />}
     </div>
   );
 }
@@ -248,12 +249,14 @@ export default function Change_Password() {
         </div>
 
         {success ? (
-          <div style={{ background:'#EAF3DE', border:'1px solid #97C459', borderRadius:16, padding:'28px 32px', textAlign:'center', animation:'fadeUp 0.4s ease both' }}>
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" strokeWidth="1.5" style={{ marginBottom:14 }}>
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            <div style={{ fontSize:18, fontWeight:700, fontFamily:"'Playfair Display',serif", color:'#27500A', marginBottom:6 }}>Password changed!</div>
-            <p style={{ fontSize:13, ...FF, color:'#3B6D11' }}>Redirecting you back…</p>
+          <div style={{ background:'linear-gradient(135deg,#F0FAE8,#E6F5D9)', border:'1.5px solid #8DC55A', borderRadius:18, padding:'36px 32px', textAlign:'center', animation:'fadeUp 0.4s cubic-bezier(0.34,1.4,0.64,1) both', boxShadow:'0 6px 24px rgba(60,120,20,.12)' }}>
+            <div style={{ width:64, height:64, background:'linear-gradient(135deg,#C8EAAA,#A0D870)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'0 4px 16px rgba(60,160,20,.25)' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#235A08" strokeWidth="2.2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <div style={{ fontSize:20, fontWeight:700, fontFamily:"'Playfair Display',serif", color:'#235A08', marginBottom:8 }}>Password changed!</div>
+            <p style={{ fontSize:13, fontFamily:"'Lato',sans-serif", color:'#3B7A10' }}>Redirecting you back…</p>
           </div>
 
         ) : step === 'verify' ? (
@@ -270,7 +273,7 @@ export default function Change_Password() {
                 To keep your account secure, we'll send a 6-digit OTP to your registered email address before allowing you to change your password.
               </p>
             </div>
-            {errors.otp && <div style={{ background:'#FCEBEB', border:'1px solid #F09595', borderRadius:10, padding:'10px 14px', marginBottom:16, fontSize:13, ...FF, color:'#A32D2D' }}>{errors.otp}</div>}
+            {errors.otp && <Alert type="error" message={errors.otp} onClose={() => setErrors(e => ({...e, otp:""}))} />}
             <button onClick={handleSendOtp} disabled={loading} className="save-btn"
               style={{ width:'100%', padding:'13px', background: loading ? '#C0A060' : 'linear-gradient(135deg,#C89030,#A06820)', border:'none', borderRadius:12, color:'white', ...SER, fontSize:13, letterSpacing:'1.2px', cursor: loading ? 'not-allowed' : 'pointer', transition:'all 0.25s', boxShadow:'0 4px 16px rgba(180,120,30,.25)' }}>
               {loading ? 'Sending OTP…' : 'Send OTP to My Email'}
@@ -280,14 +283,12 @@ export default function Change_Password() {
         ) : step === 'otp' ? (
           /* ── Step 2: Enter OTP ── */
           <div style={{ background:'linear-gradient(160deg,#FFFEF8,#FBF4E4)', border:'1px solid #E2D5BA', borderRadius:18, padding:32, boxShadow:'0 6px 24px rgba(80,50,15,.08)', animation:'fadeUp 0.5s ease both' }}>
-            <div style={{ background:'#EAF3DE', border:'1px solid #97C459', borderRadius:10, padding:'10px 14px', marginBottom:22, fontSize:13, ...FF, color:'#27500A', textAlign:'center' }}>
-              OTP sent to <strong>{maskedEmail}</strong>. Check your inbox.
-            </div>
+            <Alert type="info" message={<>OTP sent to <strong>{maskedEmail}</strong>. Check your inbox.</>} />
 
             <label style={{ ...LBL, textAlign:'center', display:'block', marginBottom:14 }}>Enter 6-Digit OTP</label>
             <OtpInput value={otp} onChange={setOtp} />
 
-            {errors.otp && <div style={{ background:'#FCEBEB', border:'1px solid #F09595', borderRadius:10, padding:'10px 14px', marginTop:14, fontSize:13, ...FF, color:'#A32D2D', textAlign:'center' }}>{errors.otp}</div>}
+            {errors.otp && <Alert type="error" message={errors.otp} onClose={() => setErrors(e => ({...e, otp:""}))} />}
 
             <div style={{ textAlign:'center', marginTop:12, marginBottom:22 }}>
               {resendCooldown > 0 ? (
@@ -314,10 +315,7 @@ export default function Change_Password() {
           /* ── Step 3: New Password Form ── */
           <div style={{ background:'linear-gradient(160deg,#FFFEF8,#FBF4E4)', border:'1px solid #E2D5BA', borderRadius:18, padding:32, boxShadow:'0 6px 24px rgba(80,50,15,.08)', animation:'fadeUp 0.5s ease both' }}>
             {/* OTP verified badge */}
-            <div style={{ background:'#EAF3DE', border:'1px solid #97C459', borderRadius:10, padding:'8px 14px', marginBottom:22, fontSize:13, ...FF, color:'#27500A', display:'flex', alignItems:'center', gap:8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Identity verified — set your new password below.
-            </div>
+            <Alert type="success" message="Identity verified — set your new password below." />
 
             <form onSubmit={handleSubmit}>
               <PwdField label="Current password" value={form.current} onChange={set('current')} show={show.current} onToggle={toggle('current')} error={errors.current} />

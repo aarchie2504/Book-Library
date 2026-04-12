@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Alert, FieldError } from './ToastProvider.jsx';
 
 const GL = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
@@ -13,7 +14,6 @@ const GL = `
 `;
 const inp = { width:"100%",padding:"12px 15px",background:"#FBF6ED",border:"1.5px solid #E0CFA8",borderRadius:"10px",color:"#2A1F0E",fontSize:"15px",fontFamily:"'Lato',sans-serif",outline:"none",transition:"all 0.2s",boxSizing:"border-box" };
 const lbl = { display:"block",marginBottom:"7px",fontFamily:"'Cinzel',serif",fontSize:12,letterSpacing:"1.5px",textTransform:"uppercase",color:"#3D2B0E" };
-const errS = { display:"block",fontSize:"12px",color:"#dc2626",marginTop:"5px",fontStyle:"italic" };
 const g2  = { display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px" };
 
 function pwdStrength(p) {
@@ -104,31 +104,31 @@ export default function Writer_Registration() {
               <div style={{ marginBottom:"20px" }}>
                 <label style={lbl}>Full Name *</label>
                 <input className="gl-input" style={{ ...inp, borderColor:errors.name?"#ef4444":undefined }} placeholder="Your full name" value={form.name} onChange={set("name")}/>
-                {errors.name && <span style={errS}>{errors.name}</span>}
+                {errors.name && <FieldError message={errors.name} />}
               </div>
               <div style={{ marginBottom:"20px" }}>
                 <label style={lbl}>City *</label>
                 <input className="gl-input" style={{ ...inp, borderColor:errors.city?"#ef4444":undefined }} placeholder="Your city" value={form.city} onChange={set("city")}/>
-                {errors.city && <span style={errS}>{errors.city}</span>}
+                {errors.city && <FieldError message={errors.city} />}
               </div>
             </div>
 
             <div style={{ marginBottom:"20px" }}>
               <label style={lbl}>Address *</label>
               <input className="gl-input" style={{ ...inp, borderColor:errors.address?"#ef4444":undefined }} placeholder="Full address" value={form.address} onChange={set("address")}/>
-              {errors.address && <span style={errS}>{errors.address}</span>}
+              {errors.address && <FieldError message={errors.address} />}
             </div>
 
             <div style={g2}>
               <div style={{ marginBottom:"20px" }}>
                 <label style={lbl}>Mobile Number *</label>
                 <input className="gl-input" style={{ ...inp, borderColor:errors.mno?"#ef4444":undefined }} placeholder="10-digit number" value={form.mno} onChange={set("mno")} maxLength={10} inputMode="numeric"/>
-                {errors.mno && <span style={errS}>{errors.mno}</span>}
+                {errors.mno && <FieldError message={errors.mno} />}
               </div>
               <div style={{ marginBottom:"20px" }}>
                 <label style={lbl}>Email Address *</label>
                 <input className="gl-input" style={{ ...inp, borderColor:errors.email?"#ef4444":undefined }} type="email" placeholder="email@example.com" value={form.email} onChange={set("email")}/>
-                {errors.email && <span style={errS}>{errors.email}</span>}
+                {errors.email && <FieldError message={errors.email} />}
               </div>
             </div>
 
@@ -149,7 +149,7 @@ export default function Writer_Registration() {
                   <span style={{ fontSize:11, color:strength.color, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px", fontWeight:600 }}>{strength.label}</span>
                 </div>
               )}
-              {errors.pwd && <span style={errS}>{errors.pwd}</span>}
+              {errors.pwd && <FieldError message={errors.pwd} />}
             </div>
 
             {/* Confirm password */}
@@ -161,8 +161,8 @@ export default function Writer_Registration() {
                   {showConfirm ? "🙈" : "👁️"}
                 </button>
               </div>
-              {errors.confirmPwd && <span style={errS}>{errors.confirmPwd}</span>}
-              {form.confirmPwd && form.confirmPwd === form.pwd && !errors.confirmPwd && (
+              {errors.confirmPwd && <FieldError message={errors.confirmPwd} />}
+              {form.confirmPwd && form.confirmPwd === form.pwd && !errors.confirmPwd && (<span style={{display:'block',fontSize:12,color:'#22c55e',fontFamily:"'Lato',sans-serif",marginTop:4}}>✓ Passwords match</span>)}
                 <span style={{ ...errS, color:"#22c55e" }}>✓ Passwords match</span>
               )}
             </div>
@@ -172,7 +172,7 @@ export default function Writer_Registration() {
               <label style={lbl}>About You / Bio *</label>
               <textarea className="gl-input" style={{ ...inp, minHeight:"88px", resize:"vertical", lineHeight:1.7, borderColor:errors.description?"#ef4444":undefined }} placeholder="Tell readers about yourself and your writing style…" value={form.description} onChange={set("description")}/>
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-                {errors.description ? <span style={errS}>{errors.description}</span> : <span/>}
+                {errors.description && <FieldError message={errors.description} />}
                 <span style={{ fontSize:11, color:"#A08050", fontFamily:"'Lato',sans-serif" }}>{form.description.length} chars</span>
               </div>
             </div>

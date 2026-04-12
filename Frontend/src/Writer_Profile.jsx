@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -15,16 +16,14 @@ const INP = { width:'100%', padding:'11px 15px', background:'#FBF6ED', border:'1
 const LBL = { display:'block', marginBottom:5, fontSize:11, letterSpacing:'1.5px', textTransform:'uppercase', color:'#B8860B', fontFamily:"'Cinzel',serif", fontWeight:700 };
 
 export default function Writer_Profile() {
+  const toast = useToast();
   const wid = localStorage.getItem('writerid') || localStorage.getItem('userid');
   const [profile, setProfile] = useState(null);
   const [stats,   setStats]   = useState({});
   const [editing, setEditing] = useState(false);
   const [form,    setForm]    = useState({});
   const [saving,  setSaving]  = useState(false);
-  const [toast,   setToast]   = useState('');
   const [loading, setLoading] = useState(true);
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function Writer_Profile() {
         setStats(d.stats || {});
         setForm({ name: d.writer.name||'', bio: d.writer.bio||'', city: d.writer.city||'', phone: d.writer.phone||'', address: d.writer.address||'' });
       })
-      .catch(() => showToast('Could not load profile.'))
+      .catch(() => toast.error('Could not load profile.'))
       .finally(() => setLoading(false));
   }, [wid]);
 
@@ -45,10 +44,10 @@ export default function Writer_Profile() {
       setProfile(res.writer);
       setForm({ name: res.writer.name||'', bio: res.writer.bio||'', city: res.writer.city||'', phone: res.writer.phone||'', address: res.writer.address||'' });
       setEditing(false);
-      showToast('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       // Update name in localStorage so navbar stays in sync
       localStorage.setItem('uname', res.writer.name || '');
-    } catch { showToast('Failed to save. Try again.'); }
+    } catch { toast.error('Failed to save. Try again.'); }
     setSaving(false);
   };
 
@@ -68,9 +67,7 @@ export default function Writer_Profile() {
   return (
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...FF, zIndex:999, animation:'fadeUp 0.3s ease' }}>{toast}</div>
-      )}
+      
 
       <div style={{ maxWidth:800, margin:'0 auto' }}>
         {/* Header */}

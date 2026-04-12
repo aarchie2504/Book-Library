@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -85,19 +86,17 @@ const reports = [
 ];
 
 export default function Admin_Export_Reports() {
+  const toast = useToast();
   const [loading, setLoading] = useState({});
-  const [toast, setToast]     = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   const handleExport = async (report) => {
     setLoading(p => ({ ...p, [report.id]: true }));
     try {
       const { rows, headers, filename } = await report.fetch();
-      if (!rows.length) { showToast('No data to export.'); return; }
+      if (!rows.length) { toast.info('No data to export.'); return; }
       download(toCSV(rows, headers), filename);
-      showToast(`${report.label} downloaded (${rows.length} rows).`);
-    } catch { showToast('Export failed. Try again.'); }
+      toast.success(`${report.label} downloaded (${rows.length} rows).`);
+    } catch { toast.error('Export failed. Try again.'); }
     setLoading(p => ({ ...p, [report.id]: false }));
   };
 
@@ -105,11 +104,7 @@ export default function Admin_Export_Reports() {
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
 
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999, animation:'fadeUp 0.3s ease' }}>
-          {toast}
-        </div>
-      )}
+      
 
       <div style={{ maxWidth:900, margin:'0 auto' }}>
         <div style={{ marginBottom:40 }}>

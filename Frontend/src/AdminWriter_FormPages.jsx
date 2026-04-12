@@ -14,7 +14,6 @@ const GL = `
 const inp={width:"100%",padding:"12px 15px",background:"#FBF6ED",border:"1.5px solid #E0CFA8",borderRadius:"10px",color:"#2A1F0E",fontSize:"15px",fontFamily:"'Lato',sans-serif",outline:"none",transition:"all 0.2s"};
 const sel={...inp,backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23B8860B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center",paddingRight:"40px",appearance:"none",WebkitAppearance:"none",cursor:"pointer"};
 const lbl={display:"block",marginBottom:"5px",fontSize:"11px",letterSpacing:"1.5px",textTransform:"uppercase",color:"#B8860B",fontFamily:"'Cinzel',serif",fontWeight:700};
-const errS={display:"block",fontSize:"12px",color:"#dc2626",marginTop:"5px",fontStyle:"italic"};
 const g2={display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px"};
 const pageWrap={minHeight:"100vh",background:"linear-gradient(160deg,#FDF8F0 0%,#F8F0E0 40%,#F5ECE0 100%)",fontFamily:"'Lato',sans-serif",position:"relative",overflow:"hidden"};
 const orb1={position:"absolute",top:"-10%",right:"-5%",width:"500px",height:"500px",borderRadius:"50%",background:"radial-gradient(circle,rgba(210,165,80,.10) 0%,transparent 70%)",animation:"pulse 14s ease-in-out infinite",pointerEvents:"none"};
@@ -29,6 +28,7 @@ const BtnP=({loading,label,disabled})=>(
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Alert, FieldError } from './ToastProvider.jsx';
 
 // ── FILE ZONE ───────────────────────────────────────────────────────────────
 function FileZone({ icon, file, onFile, accept, placeholder, replaced }) {
@@ -85,20 +85,20 @@ export function Admin_Add_Books() {
     <PageShell tag="Admin Panel" title="Add New Book">
       <form onSubmit={handleSubmit}>
         <div style={g2}>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} placeholder="Enter title" value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<span style={errS}>{errors.name}</span>}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} placeholder="Enter title" value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<FieldError message={errors.name} />}</div>
           <div style={{marginBottom:"20px"}}>
             <label style={lbl}>Category</label>
             <select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}>
               <option value="0">-- Select --</option>
               {cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}
             </select>
-            {errors.cid&&<span style={errS}>{errors.cid}</span>}
+            {errors.cid&&<FieldError message={errors.cid} />}
           </div>
         </div>
-        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} placeholder="Book description…" value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<span style={errS}>{errors.desc}</span>}</div>
+        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} placeholder="Book description…" value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<FieldError message={errors.desc} />}</div>
         <div style={{...g2,marginBottom:"28px"}}>
-          <div><label style={lbl}>Cover Image</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" placeholder="(jpg/png)"/>{errors.img&&<span style={errS}>{errors.img}</span>}</div>
-          <div><label style={lbl}>Book PDF</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" placeholder="(.pdf)"/>{errors.pdf&&<span style={errS}>{errors.pdf}</span>}</div>
+          <div><label style={lbl}>Cover Image</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" placeholder="(jpg/png)"/>{errors.img&&<FieldError message={errors.img} />}</div>
+          <div><label style={lbl}>Book PDF</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" placeholder="(.pdf)"/>{errors.pdf&&<FieldError message={errors.pdf} />}</div>
         </div>
         <div style={{display:"flex",gap:"12px"}}>
           <BtnP loading={loading} label="Save Book"/>
@@ -124,7 +124,7 @@ export function Admin_Add_Category() {
   return (
     <PageShell tag="Admin Panel" title="Add Category" maxWidth="560px">
       <form onSubmit={handleSubmit}>
-        <div style={{marginBottom:"28px"}}><label style={lbl}>Category Name</label><input className="gl-input" style={inp} placeholder="e.g. Science Fiction" value={cat} onChange={e=>setCat(e.target.value)}/>{error&&<span style={errS}>{error}</span>}</div>
+        <div style={{marginBottom:"28px"}}><label style={lbl}>Category Name</label><input className="gl-input" style={inp} placeholder="e.g. Science Fiction" value={cat} onChange={e=>setCat(e.target.value)}/>{error&&<FieldError message={error} />}</div>
         <div style={{display:"flex",gap:"12px"}}>
           <BtnP loading={loading} label="Save Category"/>
           <Link to="/admin_view_category" className="gl-btn-g" style={{display:"inline-flex",alignItems:"center",padding:"13px 22px",background:"rgba(255,250,238,.8)",border:"1.5px solid #D8C898",borderRadius:"10px",color:"#3D2B0E",fontFamily:"'Cinzel',serif",fontSize:13,letterSpacing:'1px',textDecoration:"none",transition:"all 0.2s"}}>Cancel</Link>
@@ -158,10 +158,10 @@ export function Admin_Update_Book() {
     <PageShell tag="Admin Panel" title="Update Book">
       <form onSubmit={handleSubmit}>
         <div style={g2}>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<span style={errS}>{errors.name}</span>}</div>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<span style={errS}>{errors.cid}</span>}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<FieldError message={errors.name} />}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<FieldError message={errors.cid} />}</div>
         </div>
-        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<span style={errS}>{errors.desc}</span>}</div>
+        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<FieldError message={errors.desc} />}</div>
         <div style={{...g2,marginBottom:"28px"}}>
           <div><label style={lbl}>New Cover (optional)</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" replaced="Replace image"/></div>
           <div><label style={lbl}>New PDF (optional)</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" replaced="Replace PDF"/></div>
@@ -191,7 +191,7 @@ export function Admin_Update_Category() {
   return (
     <PageShell tag="Admin Panel" title="Update Category" maxWidth="560px">
       <form onSubmit={handleSubmit}>
-        <div style={{marginBottom:"28px"}}><label style={lbl}>Category Name</label><input className="gl-input" style={inp} value={cat} onChange={e=>setCat(e.target.value)}/>{error&&<span style={errS}>{error}</span>}</div>
+        <div style={{marginBottom:"28px"}}><label style={lbl}>Category Name</label><input className="gl-input" style={inp} value={cat} onChange={e=>setCat(e.target.value)}/>{error&&<FieldError message={error} />}</div>
         <div style={{display:"flex",gap:"12px"}}>
           <BtnP loading={loading} label="Update Category"/>
           <Link to="/admin_view_category" className="gl-btn-g" style={{display:"inline-flex",alignItems:"center",padding:"13px 22px",background:"rgba(255,250,238,.8)",border:"1.5px solid #D8C898",borderRadius:"10px",color:"#3D2B0E",fontFamily:"'Cinzel',serif",fontSize:13,letterSpacing:'1px',textDecoration:"none",transition:"all 0.2s"}}>Cancel</Link>
@@ -223,13 +223,13 @@ export function Writer_Add_Books() {
     <PageShell tag="My Library" title="Upload a Book">
       <form onSubmit={handleSubmit}>
         <div style={g2}>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} placeholder="Enter title" value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<span style={errS}>{errors.name}</span>}</div>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<span style={errS}>{errors.cid}</span>}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} placeholder="Enter title" value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<FieldError message={errors.name} />}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<FieldError message={errors.cid} />}</div>
         </div>
-        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} placeholder="What is this book about?" value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<span style={errS}>{errors.desc}</span>}</div>
+        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} placeholder="What is this book about?" value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<FieldError message={errors.desc} />}</div>
         <div style={{...g2,marginBottom:"28px"}}>
-          <div><label style={lbl}>Cover Image</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" placeholder="(jpg/png)"/>{errors.img&&<span style={errS}>{errors.img}</span>}</div>
-          <div><label style={lbl}>Book PDF</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" placeholder="(.pdf)"/>{errors.pdf&&<span style={errS}>{errors.pdf}</span>}</div>
+          <div><label style={lbl}>Cover Image</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" placeholder="(jpg/png)"/>{errors.img&&<FieldError message={errors.img} />}</div>
+          <div><label style={lbl}>Book PDF</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" placeholder="(.pdf)"/>{errors.pdf&&<FieldError message={errors.pdf} />}</div>
         </div>
         <div style={{display:"flex",gap:"12px"}}>
           <BtnP loading={loading} label="Upload Book"/>
@@ -264,10 +264,10 @@ export function Writer_Update_Book() {
     <PageShell tag="My Library" title="Edit Book">
       <form onSubmit={handleSubmit}>
         <div style={g2}>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<span style={errS}>{errors.name}</span>}</div>
-          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<span style={errS}>{errors.cid}</span>}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Book Title</label><input className="gl-input" style={inp} value={name} onChange={e=>setName(e.target.value)}/>{errors.name&&<FieldError message={errors.name} />}</div>
+          <div style={{marginBottom:"20px"}}><label style={lbl}>Category</label><select className="gl-input" style={sel} value={cid} onChange={e=>setCid(e.target.value)}><option value="0">-- Select --</option>{cat.map(c=><option key={c.cat_id} value={c.cat_id}>{c.category}</option>)}</select>{errors.cid&&<FieldError message={errors.cid} />}</div>
         </div>
-        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<span style={errS}>{errors.desc}</span>}</div>
+        <div style={{marginBottom:"20px"}}><label style={lbl}>Description</label><textarea className="gl-input" style={{...inp,minHeight:"90px",resize:"vertical",lineHeight:1.7}} value={desc} onChange={e=>setDesc(e.target.value)}/>{errors.desc&&<FieldError message={errors.desc} />}</div>
         <div style={{...g2,marginBottom:"28px"}}>
           <div><label style={lbl}>New Cover (optional)</label><FileZone icon="🖼️" file={imgFile} onFile={setImgFile} accept="image/*" replaced="Replace image"/></div>
           <div><label style={lbl}>New PDF (optional)</label><FileZone icon="📄" file={pdfFile} onFile={setPdfFile} accept=".pdf" replaced="Replace PDF"/></div>

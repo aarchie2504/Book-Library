@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider.jsx';
 import { api, imgUrl } from './api';
 
 const GL = `
@@ -57,18 +58,16 @@ function BookTable({ books, onToggle, isFeatured }) {
 }
 
 export default function Admin_Featured_Books() {
+  const toast = useToast();
   const [books, setBooks]     = useState([]);
   const [search, setSearch]   = useState('');
   const [loading, setLoading] = useState(true);
-  const [toast, setToast]     = useState('');
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
   const load = () => {
     setLoading(true);
     api.getAllBooks()
       .then(d => setBooks(Array.isArray(d) ? d : []))
-      .catch(() => showToast('Failed to load books.'))
+      .catch(() => toast.error('Failed to load books.'))
       .finally(() => setLoading(false));
   };
 
@@ -76,7 +75,7 @@ export default function Admin_Featured_Books() {
 
   const handleToggle = async (bid, isFeatured) => {
     await api.adminToggleFeatured(bid);
-    showToast(isFeatured ? 'Book unfeatured.' : 'Book marked as featured!');
+    toast.info(isFeatured ? 'Book unfeatured.' : 'Book marked as featured!');
     load();
   };
 
@@ -90,11 +89,7 @@ export default function Admin_Featured_Books() {
     <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#FDF8F0,#F5ECE0)', padding:'48px 24px 80px' }}>
       <style>{GL}</style>
 
-      {toast && (
-        <div style={{ position:'fixed', top:24, right:24, background:'#2A1F0E', color:'#F5E8C8', padding:'12px 22px', borderRadius:12, fontSize:13, ...ff, zIndex:999, animation:'fadeUp 0.3s ease' }}>
-          {toast}
-        </div>
-      )}
+      
 
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
         <div style={{ marginBottom:32 }}>

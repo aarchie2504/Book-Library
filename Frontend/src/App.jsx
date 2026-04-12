@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
 import AnnouncementBanner from './AnnouncementBanner.jsx';
-import { ToastProvider } from './ToastProvider.jsx';
+import { ToastProvider, ConfirmProvider } from './ToastProvider.jsx';
 import NotFound from './NotFound.jsx';
 
 // ── Route guards ───────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ import Reader_Following from './Reader_Following.jsx';
 function App() {
   return (
     <ToastProvider>
+      <ConfirmProvider>
       <BrowserRouter>
         <div className="min-h-screen flex flex-col bg-parchment-100">
           <AnnouncementBanner />
@@ -148,6 +149,7 @@ function App() {
           <Footer />
         </div>
       </BrowserRouter>
+      </ConfirmProvider>
     </ToastProvider>
   );
 }

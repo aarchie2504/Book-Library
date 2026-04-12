@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Alert } from './ToastProvider.jsx';
 import { api } from './api';
 
 const GL = `
@@ -129,7 +130,7 @@ export default function Admin_Borrow_Management() {
           </div>
         </div>
 
-        {msg && <div style={{ background:'#FFF7ED', border:'1px solid #FED7AA', borderRadius:10, padding:'12px 20px', color:'#C2410C', ...FF, fontSize:14, marginBottom:16 }}>{msg}</div>}
+        {msg && <Alert type="warning" message={msg} onClose={() => setMsg('')} />}
 
         {loading ? (
           <div style={{ display:'flex', justifyContent:'center', padding:60 }}>
