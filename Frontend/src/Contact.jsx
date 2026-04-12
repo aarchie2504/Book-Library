@@ -2,9 +2,16 @@ import { useState, useRef } from "react";
 import emailjs from "@emailjs/browser";
 
 // ── Replace these 3 values with your EmailJS credentials ─────────────────────
-const EMAILJS_SERVICE_ID  = "service_6mbfo4n";   // e.g. "service_abc123"
-const EMAILJS_TEMPLATE_ID = "template_l0l9sej";  // e.g. "template_xyz789"
-const EMAILJS_PUBLIC_KEY  = "XcLrI5UFIQBTVRPGS2qYq";   // e.g. "aBcDeFgHiJkLmNoP"
+const EMAILJS_SERVICE_ID  = "service_6mbfo4n";     // EmailJS → Email Services
+const EMAILJS_TEMPLATE_ID = "template_l0l9sej";    // EmailJS → Email Templates
+const EMAILJS_PUBLIC_KEY  = "XcLrI5UFIQBTVRPGS2qYq"; // EmailJS → Account → General
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Your EmailJS template MUST contain these exact variables: ─────────────────
+//   {{from_name}}   → mapped to the "Your Name" input
+//   {{from_email}}  → mapped to the "Email Address" input
+//   {{message}}     → mapped to the "Your Message" textarea
+//   {{to_name}}     → optional, just hardcode "Admin" in your template
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Contact() {
@@ -20,17 +27,38 @@ export default function Contact() {
     setError("");
 
     try {
-      await emailjs.sendForm(
+      const result = await emailjs.sendForm(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
         formRef.current,
         EMAILJS_PUBLIC_KEY
       );
+
+      console.log("EmailJS success:", result.status, result.text);
       setSent(true);
       setForm({ name: "", email: "", message: "" });
+
     } catch (err) {
-      console.error("EmailJS error:", err);
-      setError("Something went wrong. Please try again.");
+      // Detailed error logging — check browser console for exact reason
+      console.error("EmailJS error status:", err.status);
+      console.error("EmailJS error text:",   err.text);
+
+      // Show a human-readable error based on the status code
+      if (err.status === 400) {
+        setError(
+          `Configuration error (400): ${err.text || "Check your Service ID, Template ID, and Public Key in the EmailJS dashboard."}`
+        );
+      } else if (err.status === 401) {
+        setError("Authentication failed (401): Your Public Key is incorrect. Check EmailJS → Account → General.");
+      } else if (err.status === 404) {
+        setError("Not found (404): Your Service ID or Template ID is wrong. Check the EmailJS dashboard.");
+      } else if (err.status === 412) {
+        setError("Template variable mismatch (412): Make sure your EmailJS template uses {{from_name}}, {{from_email}}, and {{message}}.");
+      } else if (err.status === 429) {
+        setError("Rate limit reached (429): Too many emails sent. Please wait and try again.");
+      } else {
+        setError(`Error ${err.status || "unknown"}: ${err.text || "Something went wrong. Please try again."}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +89,8 @@ export default function Contact() {
     {
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+          <circle cx="12" cy="10" r="3"/>
         </svg>
       ),
       label: "Location",
@@ -75,7 +104,8 @@ export default function Contact() {
       minHeight: "100vh",
       background: "linear-gradient(160deg, #FDF8F0 0%, #F8F0E0 40%, #F5ECE0 100%)",
       fontFamily: "'Lato', sans-serif",
-      position: "relative", overflow: "hidden",
+      position: "relative",
+      overflow: "hidden",
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
@@ -83,11 +113,18 @@ export default function Contact() {
         @keyframes shimmerGold { 0%{background-position:-200% center} 100%{background-position:200% center} }
         @keyframes pulse { 0%,100%{opacity:0.35;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.04)} }
         @keyframes checkIn { from{transform:scale(0) rotate(-10deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
-        .contact-input:focus { border-color: #B8860B !important; box-shadow: 0 0 0 3px rgba(184,134,11,0.12) !important; background: #FFFEF8 !important; }
+        .contact-input { transition: all 0.2s; }
+        .contact-input:focus { border-color: #B8860B !important; box-shadow: 0 0 0 3px rgba(184,134,11,0.12) !important; background: #FFFEF8 !important; outline: none; }
         .contact-input::placeholder { color: #C0A870; }
-        .contact-card:hover { transform: translateX(4px); border-left-color: currentColor; }
+        .contact-card { transition: all 0.25s; }
+        .contact-card:hover { transform: translateX(4px); }
         .send-btn:hover:not(:disabled) { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(180,120,30,0.40) !important; }
         .send-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+          .contact-grid { grid-template-columns: 1fr !important; }
+          .contact-form-box { padding: 28px 20px !important; }
+        }
       `}</style>
 
       {/* BG orbs */}
@@ -113,16 +150,19 @@ export default function Contact() {
             fontWeight: "900", lineHeight: 1.1,
             background: "linear-gradient(135deg, #3D2B0E 0%, #8B5E0A 30%, #C49020 55%, #7A4A08 80%, #3D2B0E 100%)",
             backgroundSize: "200% auto",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
             backgroundClip: "text",
             animation: "shimmerGold 6s linear infinite",
+            margin: 0,
           }}>Contact Us</h1>
         </div>
 
-        <div style={{
+        <div className="contact-grid" style={{
           display: "grid",
           gridTemplateColumns: "1fr 1.6fr",
-          gap: "40px", alignItems: "start",
+          gap: "40px",
+          alignItems: "start",
         }}>
 
           {/* LEFT — contact info */}
@@ -141,12 +181,11 @@ export default function Contact() {
               {contacts.map((c, i) => (
                 <div key={i} className="contact-card" style={{
                   display: "flex", alignItems: "flex-start", gap: "16px",
-                  padding: "20px 20px",
+                  padding: "20px",
                   background: "linear-gradient(160deg, rgba(255,252,242,0.9), rgba(250,242,224,0.9))",
                   border: "1px solid #E8DFC8",
-                  borderLeft: `3px solid ${c.color}55`,
+                  borderLeft: `3px solid ${c.color}88`,
                   borderRadius: "14px",
-                  transition: "all 0.25s",
                 }}>
                   <div style={{
                     width: "44px", height: "44px", flexShrink: 0,
@@ -173,7 +212,7 @@ export default function Contact() {
               ))}
             </div>
 
-            <div style={{ marginTop: "36px", textAlign: "left" }}>
+            <div style={{ marginTop: "36px" }}>
               <div style={{
                 fontFamily: "'Cinzel', serif", fontSize: "10px",
                 letterSpacing: "3px", color: "#C0A060",
@@ -182,14 +221,17 @@ export default function Contact() {
           </div>
 
           {/* RIGHT — form */}
-          <div style={{
+          <div className="contact-form-box" style={{
             background: "linear-gradient(160deg, #FFFEF8 0%, #FBF4E4 100%)",
-            border: "1px solid #E2D5BA", borderRadius: "24px",
-            padding: "44px 44px",
+            border: "1px solid #E2D5BA",
+            borderRadius: "24px",
+            padding: "44px",
             boxShadow: "0 8px 40px rgba(80,50,15,0.10), 0 2px 8px rgba(80,50,15,0.06)",
             animation: "fadeSlideUp 0.9s 0.15s ease both",
           }}>
+
             {sent ? (
+              /* ── Success state ── */
               <div style={{ textAlign: "center", padding: "40px 20px" }}>
                 <div style={{
                   width: "80px", height: "80px", margin: "0 auto 24px",
@@ -227,7 +269,9 @@ export default function Contact() {
                   }}
                 >Send Another</button>
               </div>
+
             ) : (
+              /* ── Form state ── */
               <>
                 <div style={{ marginBottom: "28px" }}>
                   <div style={{
@@ -237,7 +281,7 @@ export default function Contact() {
                   <h3 style={{
                     fontFamily: "'Playfair Display', serif",
                     fontSize: "24px", fontWeight: "800",
-                    color: "#2A1F0E",
+                    color: "#2A1F0E", margin: 0,
                   }}>We'd love to hear from you</h3>
                 </div>
 
@@ -246,15 +290,28 @@ export default function Contact() {
                 {/* Error message */}
                 {error && (
                   <div style={{
-                    padding: "12px 16px", marginBottom: "20px",
-                    background: "#FFF0F0", border: "1px solid #F5C0C0",
-                    borderRadius: "8px", color: "#C0392B",
-                    fontFamily: "'Lato', sans-serif", fontSize: "14px",
-                  }}>{error}</div>
+                    padding: "14px 16px", marginBottom: "20px",
+                    background: "#FFF0F0",
+                    border: "1px solid #F5C0C0",
+                    borderRadius: "10px",
+                    color: "#C0392B",
+                    fontFamily: "'Lato', sans-serif",
+                    fontSize: "13px",
+                    lineHeight: 1.6,
+                  }}>
+                    <strong style={{ display: "block", marginBottom: "4px" }}>Failed to send</strong>
+                    {error}
+                  </div>
                 )}
 
-                {/* IMPORTANT: name attributes must match your EmailJS template variables */}
-                <form ref={formRef} onSubmit={handleSubmit}>
+                {/*
+                  IMPORTANT — EmailJS template variables must match these name attributes:
+                    name="from_name"   → {{from_name}}
+                    name="from_email"  → {{from_email}}
+                    name="message"     → {{message}}
+                */}
+                <form ref={formRef} onSubmit={handleSubmit} noValidate>
+
                   {/* Name */}
                   <div style={{ marginBottom: "20px" }}>
                     <label style={{
@@ -265,6 +322,7 @@ export default function Contact() {
                     }}>Your Name</label>
                     <input
                       className="contact-input"
+                      type="text"
                       name="from_name"
                       placeholder="Jane Austen"
                       value={form.name}
@@ -273,10 +331,10 @@ export default function Contact() {
                       style={{
                         width: "100%", padding: "13px 16px",
                         background: "#FBF6ED",
-                        border: "1.5px solid #E0CFA8", borderRadius: "11px",
+                        border: "1.5px solid #E0CFA8",
+                        borderRadius: "11px",
                         color: "#2A1F0E", fontSize: "15px",
                         fontFamily: "'Lato', sans-serif",
-                        outline: "none", transition: "all 0.2s",
                         boxSizing: "border-box",
                       }}
                     />
@@ -291,8 +349,8 @@ export default function Contact() {
                       color: "#8A7055",
                     }}>Email Address</label>
                     <input
-                      type="email"
                       className="contact-input"
+                      type="email"
                       name="from_email"
                       placeholder="you@example.com"
                       value={form.email}
@@ -301,10 +359,10 @@ export default function Contact() {
                       style={{
                         width: "100%", padding: "13px 16px",
                         background: "#FBF6ED",
-                        border: "1.5px solid #E0CFA8", borderRadius: "11px",
+                        border: "1.5px solid #E0CFA8",
+                        borderRadius: "11px",
                         color: "#2A1F0E", fontSize: "15px",
                         fontFamily: "'Lato', sans-serif",
-                        outline: "none", transition: "all 0.2s",
                         boxSizing: "border-box",
                       }}
                     />
@@ -329,29 +387,35 @@ export default function Contact() {
                       style={{
                         width: "100%", padding: "13px 16px",
                         background: "#FBF6ED",
-                        border: "1.5px solid #E0CFA8", borderRadius: "11px",
+                        border: "1.5px solid #E0CFA8",
+                        borderRadius: "11px",
                         color: "#2A1F0E", fontSize: "15px",
                         fontFamily: "'Lato', sans-serif",
-                        outline: "none", transition: "all 0.2s",
                         resize: "vertical", lineHeight: 1.7,
                         boxSizing: "border-box",
                       }}
                     />
                   </div>
 
-                  <button type="submit" className="send-btn" disabled={loading} style={{
-                    width: "100%", padding: "15px",
-                    background: loading
-                      ? "linear-gradient(135deg, #C89030aa, #A06820aa)"
-                      : "linear-gradient(135deg, #C89030, #A06820)",
-                    border: "none", borderRadius: "12px",
-                    color: "white", cursor: loading ? "not-allowed" : "pointer",
-                    fontFamily: "'Cinzel', serif", fontSize: "12px",
-                    letterSpacing: "1.5px", fontWeight: "600",
-                    boxShadow: "0 4px 16px rgba(180,120,30,0.28)",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                    transition: "all 0.25s",
-                  }}>
+                  <button
+                    type="submit"
+                    className="send-btn"
+                    disabled={loading}
+                    style={{
+                      width: "100%", padding: "15px",
+                      background: loading
+                        ? "linear-gradient(135deg, #C89030aa, #A06820aa)"
+                        : "linear-gradient(135deg, #C89030, #A06820)",
+                      border: "none", borderRadius: "12px",
+                      color: "white",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      fontFamily: "'Cinzel', serif",
+                      fontSize: "12px", letterSpacing: "1.5px", fontWeight: "600",
+                      boxShadow: "0 4px 16px rgba(180,120,30,0.28)",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                      transition: "all 0.25s",
+                    }}
+                  >
                     {loading ? "Sending…" : "Send Message"}
                     {!loading && (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -360,6 +424,7 @@ export default function Contact() {
                       </svg>
                     )}
                   </button>
+
                 </form>
               </>
             )}
