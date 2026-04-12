@@ -4,7 +4,7 @@ import emailjs from "@emailjs/browser";
 // ── Replace these 3 values with your EmailJS credentials ─────────────────────
 const EMAILJS_SERVICE_ID  = "service_6mbfo4n";     // EmailJS → Email Services
 const EMAILJS_TEMPLATE_ID = "template_l0l9sej";    // EmailJS → Email Templates
-const EMAILJS_PUBLIC_KEY  = "XcLrI5UFIQBTVRPGS2qYq"; // EmailJS → Account → General
+const EMAILJS_PUBLIC_KEY  = "sxM6D965RTGxMsuKR"; // EmailJS → Account → General
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Your EmailJS template MUST contain these exact variables: ─────────────────
