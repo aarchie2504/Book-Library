@@ -41,7 +41,7 @@ export default function Admin_Moderate_Ratings() {
       api.adminGetBookRatings(bid),
       api.getSingleBook(bid),
     ]).then(([rats, book]) => {
-      setRatings(rats || []);
+      setRatings(Array.isArray(rats) ? rats : (rats?.data || []));
       setBookName(book?.book_name || book?.title || 'Book');
     }).catch(() => toast.error('Failed to load ratings.'))
       .finally(() => setLoading(false));

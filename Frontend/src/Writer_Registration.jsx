@@ -163,8 +163,6 @@ export default function Writer_Registration() {
               </div>
               {errors.confirmPwd && <FieldError message={errors.confirmPwd} />}
               {form.confirmPwd && form.confirmPwd === form.pwd && !errors.confirmPwd && (<span style={{display:'block',fontSize:12,color:'#22c55e',fontFamily:"'Lato',sans-serif",marginTop:4}}>✓ Passwords match</span>)}
-                <span style={{ ...errS, color:"#22c55e" }}>✓ Passwords match</span>
-              )}
             </div>
 
             {/* Bio */}
